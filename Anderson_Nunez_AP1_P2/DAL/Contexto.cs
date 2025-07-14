@@ -7,6 +7,8 @@ public class Contexto : DbContext
 {
     public Contexto(DbContextOptions<Contexto> options) : base(options) { }
 
-    public DbSet<Parcial> Parcial { get; set; }
+    public DbSet<Entradas> Entradas { get; set; }
+    public DbSet<Productos> Productos { get; set; }
+    public DbSet<EntradasDetalle> EntradasDetalles { get; set; }
 
 }
