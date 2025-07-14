@@ -1,10 +1,13 @@
 using Anderson_Nunez_AP1_P2.Components;
+using Anderson_Nunez_AP1_P2.DAL;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddBlazorBootstrap();
 
-
+//Contexto 
+var ConString = builder.Configuration.GetConnectionString("ConStr");
+builder.Services.AddDbContextFactory<Contexto>(o => o.UseSqlServer(ConString));
 
 
 // Add services to the container.
