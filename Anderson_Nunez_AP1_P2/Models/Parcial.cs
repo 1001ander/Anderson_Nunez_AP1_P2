@@ -3,17 +3,17 @@ using System.Data;
 
 namespace Anderson_Nunez_AP1_P2.Models;
 
-public class Parcial
+public class Producto 
 {
     [Key]
-    public int ParcialId { get; set; }
+    public int ProdutoId { get; set; }
 
     [Required(ErrorMessage ="Campo Fecha Obligatorio")]
     public DateTime Fecha { get; set; }
 
-    [Required(ErrorMessage ="Campo Nombre Obligatorio")]
+    [Required(ErrorMessage ="Campo descripcion obligaotrio")]
     [StringLength(100, ErrorMessage ="Maximo 100 Caracteres")]
-    public string? Nombre { get; set; }
+    public string? Descripcion { get; set; }
 
     [Required(ErrorMessage ="Campo Monto Obligatorio")]
     [Range(1, double.MaxValue, ErrorMessage ="El monto debe ser mayor que 0")]
