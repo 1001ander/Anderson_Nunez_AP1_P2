@@ -13,7 +13,7 @@ public class Productos
     public string Descripcion { get; set; } = string.Empty;
 
     [Range(0.01, double.MaxValue, ErrorMessage = "El peso debe ser mayor que cero.")]
-    public decimal Peso { get; set; } // En kilogramos (ej: 0.5 kg)
+    public decimal Peso { get; set; } 
 
     [Range(0, int.MaxValue, ErrorMessage = "La existencia no puede ser negativa.")]
     public int Existencia { get; set; }
