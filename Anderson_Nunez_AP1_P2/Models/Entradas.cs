@@ -20,7 +20,7 @@ namespace Anderson_Nunez_AP1_P2.Models
 
         
         [ForeignKey("Producto")]
-        public int IdProducido { get; set; }
+        public int ProductoId { get; set; }
 
         [Range(1, int.MaxValue, ErrorMessage = "La cantidad producida debe ser al menos 1.")]
         public int CantidadProducida { get; set; }
