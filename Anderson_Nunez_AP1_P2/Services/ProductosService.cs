@@ -5,90 +5,76 @@ using System.Linq.Expressions;
 
 namespace Anderson_Nunez_AP1_P2.Services;
 
-public class ProductosService
+public class ProductosService(IDbContextFactory<Contexto> DbFactory)
 {
-    private readonly IDbContextFactory<Contexto> _dbFactory;
-
-    public ProductosService(IDbContextFactory<Contexto> dbFactory)
+    public async Task<bool> Existe(int productoid)
     {
-        _dbFactory = dbFactory;
+        await using var contexto = await DbFactory.CreateDbContextAsync();
+        return await contexto.Productos.AnyAsync(c => c.ProductoId == productoid);
+
+    }
+    public async Task<bool> Insertar(Productos producto)
+    {
+        await using var contexto = await DbFactory.CreateDbContextAsync();
+        contexto.Productos.Add(producto);
+        return await contexto.SaveChangesAsync() > 0;
+
     }
 
+    public async Task<bool> Modificar(Productos producto)
+    {
+        await using var contexto = await DbFactory.CreateDbContextAsync();
+        contexto.Productos.Update(producto);
+        return await contexto.SaveChangesAsync() > 0;
+    }
     public async Task<bool> Guardar(Productos producto)
     {
-        if (producto.ProductoId == 0)
+        if (!await Existe(producto.ProductoId))
             return await Insertar(producto);
         else
             return await Modificar(producto);
     }
-
-    public async Task<bool> Existe(int productoId)
+    public async Task<bool> Eliminar(int id)
     {
-        await using var contexto = await _dbFactory.CreateDbContextAsync();
-        return await contexto.Productos
-            .AnyAsync(p => p.ProductoId == productoId);
+        await using var contexto = await DbFactory.CreateDbContextAsync();
+        var eliminando = await contexto.Productos
+            .Where(p => p.ProductoId == id)
+            .ExecuteDeleteAsync();
+        return eliminando > 0;
+
     }
 
-    private async Task<bool> Insertar(Productos producto)
+    public async Task<Productos?> Buscar(int id)
     {
-        if (!ValidarProducto(producto))
-            return false;
-
-        await using var contexto = await _dbFactory.CreateDbContextAsync();
-        contexto.Productos.Add(producto);
-        return await contexto.SaveChangesAsync() > 0;
-    }
-
-    private async Task<bool> Modificar(Productos producto)
-    {
-        if (!ValidarProducto(producto))
-            return false;
-
-        await using var contexto = await _dbFactory.CreateDbContextAsync();
-        contexto.Productos.Update(producto);
-        return await contexto.SaveChangesAsync() > 0;
-    }
-
-    private bool ValidarProducto(Productos producto)
-    {
-        if (producto.EsCompuesto && producto.Existencia > 0)
-            throw new Exception("Productos compuestos no pueden tener existencia inicial");
-        return true;
-    }
-
-    public async Task<Productos?> Buscar(int productoId)
-    {
-        await using var contexto = await _dbFactory.CreateDbContextAsync();
+        await using var contexto = await DbFactory.CreateDbContextAsync();
         return await contexto.Productos
             .AsNoTracking()
-            .FirstOrDefaultAsync(p => p.ProductoId == productoId);
-    }
+            .FirstOrDefaultAsync(p => p.ProductoId == id);
 
-    public async Task<bool> Eliminar(int productoId)
-    {
-        await using var contexto = await _dbFactory.CreateDbContextAsync();
-        return await contexto.Productos
-            .Where(p => p.ProductoId == productoId)
-            .ExecuteDeleteAsync() > 0;
     }
 
     public async Task<List<Productos>> Listar(Expression<Func<Productos, bool>> criterio)
     {
-        await using var contexto = await _dbFactory.CreateDbContextAsync();
+        await using var contexto = await DbFactory.CreateDbContextAsync();
         return await contexto.Productos
-            .Where(criterio)
             .AsNoTracking()
+            .Where(criterio)
             .ToListAsync();
     }
-
-    public async Task<bool> ExisteProducto(int productoId, string descripcion)
+    public async Task RestaurarCantidad(int productoId, int existencia)
     {
-        if (string.IsNullOrWhiteSpace(descripcion))
-            return false;
+        await using var contexto = await DbFactory.CreateDbContextAsync();
 
-        await using var contexto = await _dbFactory.CreateDbContextAsync();
-        return await contexto.Productos
-            .AnyAsync(p => p.ProductoId != productoId &&
-                          p.Descripcion.ToLower() == descripcion.ToLower());
+        var articulo = await contexto.Productos
+        .FirstOrDefaultAsync(a => a.ProductoId == productoId);
+
+        // Si el artículo existe
+        if (articulo != null)
+        {
+            articulo.Peso += existencia;
+
+            contexto.Productos.Update(articulo);
+            await contexto.SaveChangesAsync();
+        }
     }
 }
