@@ -1,0 +1,231 @@
+﻿@page "/Entradas/Create"
+@using Anderson_Nunez_AP1_P2.Models
+@using Anderson_Nunez_AP1_P2.Services
+@inject EntradasService entradaService
+@inject ProductosService productoService
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>Crear Entrada</PageTitle>
+
+<EditForm Model="Entrada" OnValidSubmit="Guardar">
+    <DataAnnotationsValidator />
+
+    <div class="container mt-3">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white text-center">
+                <h5>Crear Entrada</h5>
+            </div>
+
+            <div class="card-body">
+                <!-- Fecha -->
+                <div class="mb-3">
+                    <label class="form-label"><strong>Fecha</strong></label>
+                    <InputDate @bind-Value="fecha" class="form-control" required @onchange="ActualizarFecha" />
+                    <ValidationMessage For="@(() => Entrada.Fecha)" />
+                </div>
+
+                <!-- Concepto -->
+                <div class="mb-3">
+                    <label class="form-label"><strong>Concepto</strong></label>
+                    <InputText @bind-Value="Entrada.Concepto" class="form-control" required />
+                    <ValidationMessage For="@(() => Entrada.Concepto)" />
+                </div>
+
+                <!-- Producto que se produce -->
+                <div class="mb-3">
+                    <label class="form-label"><strong>Producto a producir</strong></label>
+                    <InputSelect class="form-select" @bind-Value="Entrada.ProductoId">
+                        <option value="0">-- Seleccione --</option>
+                        @foreach (var p in ProductosCompuestos)
+                        {
+                            <option value="@p.ProductoId">@p.Descripcion</option>
+                        }
+                    </InputSelect>
+                    <ValidationMessage For="@(() => Entrada.ProductoId)" />
+                </div>
+
+                <!-- Cantidad producida -->
+                <div class="mb-3">
+                    <label class="form-label"><strong>Cantidad Producida</strong></label>
+                    <InputNumber @bind-Value="Entrada.CantidadProducida" class="form-control" min="1" required />
+                    <ValidationMessage For="@(() => Entrada.CantidadProducida)" />
+                </div>
+
+                <!-- Detalles de materias primas -->
+                <div class="mb-3">
+                    <h5>Detalles de la Entrada (materias primas)</h5>
+
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <div class="row align-items-end">
+                                <div class="col-md-5">
+                                    <label class="form-label">Producto</label>
+                                    <InputSelect class="form-select" @bind-Value="nuevoDetalle.ProductoId">
+                                        <option value="0">Seleccione un producto</option>
+                                        @foreach (var producto in ProductosDisponibles)
+                                        {
+                                            <option value="@producto.ProductoId">@producto.Descripcion</option>
+                                        }
+                                    </InputSelect>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Cantidad</label>
+                                    <InputNumber @bind-Value="nuevoDetalle.Cantidad" class="form-control" min="1" />
+                                </div>
+                                <div class="col-md-4">
+                                    <button type="button" class="btn btn-primary" @onclick="AgregarDetalle">
+                                        <i class="bi bi-plus-circle"></i> Agregar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Producto</th>
+                                    <th>Cantidad</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var detalle in Entrada.Detalles)
+                                {
+                                    var productoDetalle = ProductosDisponibles
+                                    .FirstOrDefault(p => p.ProductoId == detalle.ProductoId);
+                                    <tr>
+                                        <td>@(productoDetalle?.Descripcion ?? "N/A")</td>
+                                        <td>@detalle.Cantidad</td>
+                                        <td>
+                                            <button type="button" class="btn btn-danger btn-sm"
+                                                    @onclick="() => EliminarDetalle(detalle)">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-footer text-center">
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-secondary me-2" @onclick="Volver">
+                        <i class="bi bi-arrow-left"></i> Volver
+                    </button>
+                    <button type="submit" class="btn btn-success me-2">
+                        <i class="bi bi-check-circle"></i> Guardar
+                    </button>
+                    <button type="button" class="btn btn-outline-primary" @onclick="Nuevo">
+                        <i class="bi bi-eraser"></i> Limpiar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</EditForm>
+
+@code {
+    private Entradas Entrada { get; set; } = new();
+    private EntradasDetalle nuevoDetalle { get; set; } = new();
+    private List<Productos> ProductosDisponibles { get; set; } = new();
+    private List<Productos> ProductosCompuestos { get; set; } = new();
+    private DateTime fecha = DateTime.Today;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarProductos();
+        Entrada.Fecha = DateOnly.FromDateTime(fecha);
+        // Inicializar la lista de detalles si es null
+        if (Entrada.Detalles == null)
+            Entrada.Detalles = new List<EntradasDetalle>();
+    }
+
+    private async Task CargarProductos()
+    {
+        ProductosDisponibles = await productoService.Listar(p => true);
+        ProductosCompuestos = await productoService.Listar(p => p.EsCompuesto);
+    }
+
+    private void ActualizarFecha(ChangeEventArgs e)
+    {
+        if (DateTime.TryParse(e.Value?.ToString(), out DateTime nuevaFecha))
+        {
+            fecha = nuevaFecha;
+            Entrada.Fecha = DateOnly.FromDateTime(fecha);
+        }
+    }
+
+    private void AgregarDetalle()
+    {
+        if (nuevoDetalle.ProductoId == 0 || nuevoDetalle.Cantidad <= 0)
+            return;
+
+        // Inicializar la lista si es null
+        if (Entrada.Detalles == null)
+            Entrada.Detalles = new List<EntradasDetalle>();
+
+        var existe = Entrada.Detalles
+            .FirstOrDefault(d => d.ProductoId == nuevoDetalle.ProductoId);
+
+        if (existe != null)
+            existe.Cantidad += nuevoDetalle.Cantidad;
+        else
+            Entrada.Detalles.Add(new EntradasDetalle
+            {
+                ProductoId = nuevoDetalle.ProductoId,
+                Cantidad = nuevoDetalle.Cantidad
+            });
+
+        nuevoDetalle = new EntradasDetalle();
+    }
+
+    private void EliminarDetalle(EntradasDetalle detalle)
+    {
+        if (Entrada.Detalles != null)
+            Entrada.Detalles.Remove(detalle);
+    }
+
+    private async Task Guardar()
+    {
+        // Validaciones simples
+        if (Entrada.Detalles == null ||
+            Entrada.Detalles.Count == 0 ||
+            string.IsNullOrWhiteSpace(Entrada.Concepto) ||
+            Entrada.ProductoId == 0 ||
+            Entrada.CantidadProducida <= 0)
+            return;
+
+        // Calcular peso total
+        Entrada.PesoTotal = 0;
+        foreach (var d in Entrada.Detalles)
+        {
+            var p = await productoService.Buscar(d.ProductoId);
+            if (p != null)
+                Entrada.PesoTotal += p.Peso * d.Cantidad;
+        }
+
+        // Grabar
+        var ok = await entradaService.Guardar(Entrada);
+        if (ok)
+            Volver();
+    }
+
+    private void Nuevo()
+    {
+        Entrada = new Entradas
+        {
+            Fecha = DateOnly.FromDateTime(fecha),
+            Detalles = new List<EntradasDetalle>()
+        };
+        nuevoDetalle = new EntradasDetalle();
+    }
+
+    private void Volver()
+        => Navigation.NavigateTo("/Entradas/Index");
+}

@@ -1,28 +1,29 @@
-﻿﻿@page "/Parcial/Index"
-@inject ParcialService aporteService
+﻿@page "/Entradas/Index"
+@inject EntradasService entradaService
 @inject NavigationManager navigationManager
-@using BlazorBootstrap
+@using Anderson_Nunez_AP1_P2.Models
+@using Anderson_Nunez_AP1_P2.Services
 @rendermode InteractiveServer
 
-<PageTitle>Consulta de parcial</PageTitle>
+<PageTitle>Consulta de Entradas</PageTitle>
 
 <div class="container">
     <div class="card shadow-lg">
         @*Header*@
         <div class="card-header d-flex justify-content-between align-items-center position-relative">
-            <h5 class="card-title mb-0 text-center w-100">Consulta de Parcial</h5>
+            <h5 class="card-title mb-0 text-center w-100">Consulta de Entradas</h5>
         </div>
 
         @*Body*@
         <div class="card-body">
-            
+
             <div class="row mb-2">
                 <div class="col-md-12 d-flex justify-content-end">
-                    <a href="/Aportes/Create" class="btn btn-success bi bi-plus-circle"> Crear</a>
+                    <a href="/Entradas/Create" class="btn btn-success bi bi-plus-circle"> Crear</a>
                 </div>
             </div>
 
-            
+            @*Filtro por fechas*@
             <div class="row align-items-center mb-3">
                 <div class="col-3">
                     <label class="col-form-label"><strong>Rango de Fechas</strong></label>
@@ -39,7 +40,7 @@
                 </div>
             </div>
 
-            @*Filtro*@
+            @*Filtro general*@
             <div class="row mb-2">
                 <div class="col-3">
                     <label class="col-form-label"><strong>Filtrar por</strong></label>
@@ -52,9 +53,10 @@
             <div class="row align-items-center mb-3">
                 <div class="col-3">
                     <InputSelect class="form-select" @bind-Value="Filtro">
-                        <option value="" disabled selected>Elija una T&eacute;cnicos</option>
-                        <option value="ParcialId">Id</option>
-                        <option value="Nombre">Nombre</option>
+                        <option value="" disabled selected>Seleccione un filtro</option>
+                        <option value="EntradaId">Id</option>
+                        <option value="Concepto">Concepto</option>
+                        <option value="IdProducido">Producto Producido</option>
                     </InputSelect>
                 </div>
                 <div class="col-4">
@@ -75,25 +77,28 @@
                 <table class="table table-hover mt-3">
                     <thead class="table table-striped text-black">
                         <tr>
-                            <th>ParcialId</th>
+                            <th>EntradaId</th>
                             <th>Fecha</th>
-                            <th>Nombre</th>
-                            <th>Monto</th>
-                            <th class="text-center">Editar</th>
+                            <th>Concepto</th>
+                            <th>Peso Total (g)</th>
+                            <th>Cantidad Producida</th>
+                            <th>Producto Producido</th>
+                            <th class="text-center">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
                         @if (ListaFiltrada != null && ListaFiltrada.Any())
                         {
-                            @foreach (var aporte in ListaFiltrada)
+                            @foreach (var entrada in ListaFiltrada)
                             {
                                 <tr>
-                                    <td>@Parcial.AporteId</td>
-                                    <td>@Parcial.Fecha.ToShortDateString()</td>
-                                    <td>@Parcial.Nombre</td>
-                                    <td>@Parcial.Monto.ToString("C")</td>
+                                    <td>@entrada.EntradaId</td>
+                                    <td>@entrada.Fecha.ToString("dd/MM/yyyy")</td>
+                                    <td>@entrada.Concepto</td>
+                                    <td>@entrada.PesoTotal.ToString("N2")</td>
+                                    <td>@entrada.CantidadProducida</td>
                                     <td class="text-center">
-                                        <a href="/Parcial/Edit/@aporte.AporteId" class="btn btn-outline-primary btn-sm" title="Editar">
+                                        <a href="/Entradas/Edit/@entrada.EntradaId" class="btn btn-outline-primary btn-sm" title="Editar">
                                             <i class="bi bi-pencil-square"></i>
                                         </a>
                                     </td>
@@ -103,7 +108,7 @@
                         else
                         {
                             <tr>
-                                <td colspan="5" class="text-center">No hay Parcial disponibles.</td>
+                                <td colspan="7" class="text-center">No hay entradas disponibles.</td>
                             </tr>
                         }
                     </tbody>
@@ -113,16 +118,18 @@
 
         @*Footer*@
         <div class="card-footer d-flex justify-content-between">
-            <label>Cantidad de Aportes: @(ListaFiltrada?.Count() ?? 0)</label>
-            <label>Total Monto: @TotalMontoFiltrado.ToString("C")</label>
+            <label>Cantidad de Entradas: @(ListaFiltrada?.Count() ?? 0)</label>
+            <label>Peso Total: @TotalPesoFiltrado.ToString("N2") g</label>
+            <label>Cantidad Total Producida: @TotalCantidadProducida</label>
         </div>
     </div>
 </div>
 
 @code {
-    private List<Parcial> ListaAporte = new();
-    private List<Parcial> ListaFiltrada = new();
-    private decimal TotalMontoFiltrado => ListaFiltrada?.Sum(a => a.Monto) ?? 0;
+    private List<Entradas> ListaEntradas = new();
+    private List<Entradas> ListaFiltrada = new();
+    private decimal TotalPesoFiltrado => ListaFiltrada?.Sum(e => e.PesoTotal) ?? 0;
+    private int TotalCantidadProducida => ListaFiltrada?.Sum(e => e.CantidadProducida) ?? 0;
 
     private string Filtro { get; set; } = "";
     private string ValorFiltro { get; set; } = "";
@@ -131,38 +138,44 @@
 
     protected override async Task OnInitializedAsync()
     {
-        await CargarParcial();
+        await CargarEntradas();
     }
 
-    private async Task CargarParcial()
+    private async Task CargarEntradas()
     {
-        ListaParcial = await parcialService.Listar();
-        ListaFiltrada = ListaParcial;
+        ListaEntradas = await entradaService.Listar(e => true);
+        ListaFiltrada = ListaEntradas;
     }
 
     private async Task Buscar()
     {
         if (string.IsNullOrWhiteSpace(Filtro) || string.IsNullOrWhiteSpace(ValorFiltro))
         {
-            ListaFiltrada = ListaParcial;
+            ListaFiltrada = ListaEntradas;
             return;
         }
 
         switch (Filtro)
         {
-            case "AporteId":
+            case "EntradaId":
                 if (int.TryParse(ValorFiltro, out int id))
                 {
-                    ListaFiltrada = ListaParcial.Where(a => a.ParcialId == id).ToList();
+                    ListaFiltrada = ListaEntradas.Where(e => e.EntradaId == id).ToList();
                 }
                 break;
-            case "Nombre":
-                ListaFiltrada = ListaParcial
-                    .Where(a => a.Nombre.Contains(ValorFiltro, StringComparison.OrdinalIgnoreCase))
+            case "Concepto":
+                ListaFiltrada = ListaEntradas
+                    .Where(e => e.Concepto.Contains(ValorFiltro, StringComparison.OrdinalIgnoreCase))
                     .ToList();
                 break;
+            case "IdProducido":
+                if (int.TryParse(ValorFiltro, out int productoId))
+                {
+                    ListaFiltrada = ListaEntradas.Where(e => e.ProductoId == productoId).ToList();
+                }
+                break;
             default:
-                ListaFiltrada = ListaParcial;
+                ListaFiltrada = ListaEntradas;
                 break;
         }
     }
@@ -171,13 +184,13 @@
     {
         if (FechaDesde == null && FechaHasta == null)
         {
-            ListaFiltrada = ListaParcial;
+            ListaFiltrada = ListaEntradas;
             return;
         }
 
-        ListaFiltrada = ListaParcial.Where(a =>
-            (FechaDesde == null || a.Fecha.Date >= FechaDesde.Value.Date) &&
-            (FechaHasta == null || a.Fecha.Date <= FechaHasta.Value.Date)
+        ListaFiltrada = ListaEntradas.Where(e =>
+            (FechaDesde == null || e.Fecha >= DateOnly.FromDateTime(FechaDesde.Value)) &&
+            (FechaHasta == null || e.Fecha <= DateOnly.FromDateTime(FechaHasta.Value))
         ).ToList();
     }
 
@@ -187,6 +200,6 @@
         ValorFiltro = "";
         FechaDesde = null;
         FechaHasta = null;
-        ListaFiltrada = ListaParcial;
-    }
+        ListaFiltrada = ListaEntradas;
+    }
 }
