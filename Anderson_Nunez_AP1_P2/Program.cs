@@ -13,7 +13,7 @@ builder.Services.AddDbContextFactory<Contexto>(o => o.UseSqlServer(ConString));
 
 //Inyeccion del service
 builder.Services.AddScoped<EntradasService>();
-builder.Services.AddScoped<ProductosService>();
+builder.Services.AddScoped<ProductosService>(); 
 
 builder.Services.AddBlazoredToast();
 
