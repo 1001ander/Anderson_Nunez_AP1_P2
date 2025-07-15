@@ -3,12 +3,10 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-#pragma warning disable CA1814 // Prefer jagged arrays over multidimensional
-
 namespace Anderson_Nunez_AP1_P2.Migrations
 {
     /// <inheritdoc />
-    public partial class ParcialMej : Migration
+    public partial class initial : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -19,7 +17,7 @@ namespace Anderson_Nunez_AP1_P2.Migrations
                 {
                     ProductoId = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    Descripcion = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Descripcion = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Peso = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     Existencia = table.Column<int>(type: "int", nullable: false),
                     EsCompuesto = table.Column<bool>(type: "bit", nullable: false)
@@ -35,36 +33,36 @@ namespace Anderson_Nunez_AP1_P2.Migrations
                 {
                     EntradaId = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    Fecha = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    Concepto = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    Fecha = table.Column<DateOnly>(type: "date", nullable: false),
+                    Concepto = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     PesoTotal = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     ProductoId = table.Column<int>(type: "int", nullable: false),
-                    CantidadProducida = table.Column<int>(type: "int", nullable: false)
+                    CantidadProducida = table.Column<int>(type: "int", nullable: false),
+                    ProductosProductoId = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Entradas", x => x.EntradaId);
                     table.ForeignKey(
-                        name: "FK_Entradas_Productos_ProductoId",
-                        column: x => x.ProductoId,
+                        name: "FK_Entradas_Productos_ProductosProductoId",
+                        column: x => x.ProductosProductoId,
                         principalTable: "Productos",
-                        principalColumn: "ProductoId",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "ProductoId");
                 });
 
             migrationBuilder.CreateTable(
                 name: "EntradasDetalles",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
+                    EntradaDetalleId = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     EntradaId = table.Column<int>(type: "int", nullable: false),
                     ProductoId = table.Column<int>(type: "int", nullable: false),
-                    Cantidad = table.Column<decimal>(type: "decimal(18,2)", nullable: false)
+                    Cantidad = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_EntradasDetalles", x => x.Id);
+                    table.PrimaryKey("PK_EntradasDetalles", x => x.EntradaDetalleId);
                     table.ForeignKey(
                         name: "FK_EntradasDetalles_Entradas_EntradaId",
                         column: x => x.EntradaId,
@@ -76,26 +74,13 @@ namespace Anderson_Nunez_AP1_P2.Migrations
                         column: x => x.ProductoId,
                         principalTable: "Productos",
                         principalColumn: "ProductoId",
-                        onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.InsertData(
-                table: "Productos",
-                columns: new[] { "ProductoId", "Descripcion", "EsCompuesto", "Existencia", "Peso" },
-                values: new object[,]
-                {
-                    { 1, "Maní", false, 100, 0.25m },
-                    { 2, "Pistachos", false, 100, 0.20m },
-                    { 3, "Almendras", false, 100, 0.15m },
-                    { 4, "Frutos Mixtos 200gr", true, 0, 0.20m },
-                    { 5, "Frutos Mixtos 400gr", true, 0, 0.40m },
-                    { 6, "Frutos Mixtos 600gr", true, 0, 0.60m }
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Entradas_ProductoId",
+                name: "IX_Entradas_ProductosProductoId",
                 table: "Entradas",
-                column: "ProductoId");
+                column: "ProductosProductoId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_EntradasDetalles_EntradaId",

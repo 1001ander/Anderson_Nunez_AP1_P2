@@ -35,11 +35,10 @@ namespace Anderson_Nunez_AP1_P2.Migrations
 
                     b.Property<string>("Concepto")
                         .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                        .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime>("Fecha")
-                        .HasColumnType("datetime2");
+                    b.Property<DateOnly>("Fecha")
+                        .HasColumnType("date");
 
                     b.Property<decimal>("PesoTotal")
                         .HasColumnType("decimal(18,2)");
@@ -47,23 +46,26 @@ namespace Anderson_Nunez_AP1_P2.Migrations
                     b.Property<int>("ProductoId")
                         .HasColumnType("int");
 
+                    b.Property<int?>("ProductosProductoId")
+                        .HasColumnType("int");
+
                     b.HasKey("EntradaId");
 
-                    b.HasIndex("ProductoId");
+                    b.HasIndex("ProductosProductoId");
 
                     b.ToTable("Entradas");
                 });
 
             modelBuilder.Entity("Anderson_Nunez_AP1_P2.Models.EntradasDetalle", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<int>("EntradaDetalleId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("EntradaDetalleId"));
 
-                    b.Property<decimal>("Cantidad")
-                        .HasColumnType("decimal(18,2)");
+                    b.Property<int>("Cantidad")
+                        .HasColumnType("int");
 
                     b.Property<int>("EntradaId")
                         .HasColumnType("int");
@@ -71,7 +73,7 @@ namespace Anderson_Nunez_AP1_P2.Migrations
                     b.Property<int>("ProductoId")
                         .HasColumnType("int");
 
-                    b.HasKey("Id");
+                    b.HasKey("EntradaDetalleId");
 
                     b.HasIndex("EntradaId");
 
@@ -90,8 +92,7 @@ namespace Anderson_Nunez_AP1_P2.Migrations
 
                     b.Property<string>("Descripcion")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("EsCompuesto")
                         .HasColumnType("bit");
@@ -105,67 +106,13 @@ namespace Anderson_Nunez_AP1_P2.Migrations
                     b.HasKey("ProductoId");
 
                     b.ToTable("Productos");
-
-                    b.HasData(
-                        new
-                        {
-                            ProductoId = 1,
-                            Descripcion = "Maní",
-                            EsCompuesto = false,
-                            Existencia = 100,
-                            Peso = 0.25m
-                        },
-                        new
-                        {
-                            ProductoId = 2,
-                            Descripcion = "Pistachos",
-                            EsCompuesto = false,
-                            Existencia = 100,
-                            Peso = 0.20m
-                        },
-                        new
-                        {
-                            ProductoId = 3,
-                            Descripcion = "Almendras",
-                            EsCompuesto = false,
-                            Existencia = 100,
-                            Peso = 0.15m
-                        },
-                        new
-                        {
-                            ProductoId = 4,
-                            Descripcion = "Frutos Mixtos 200gr",
-                            EsCompuesto = true,
-                            Existencia = 0,
-                            Peso = 0.20m
-                        },
-                        new
-                        {
-                            ProductoId = 5,
-                            Descripcion = "Frutos Mixtos 400gr",
-                            EsCompuesto = true,
-                            Existencia = 0,
-                            Peso = 0.40m
-                        },
-                        new
-                        {
-                            ProductoId = 6,
-                            Descripcion = "Frutos Mixtos 600gr",
-                            EsCompuesto = true,
-                            Existencia = 0,
-                            Peso = 0.60m
-                        });
                 });
 
             modelBuilder.Entity("Anderson_Nunez_AP1_P2.Models.Entradas", b =>
                 {
-                    b.HasOne("Anderson_Nunez_AP1_P2.Models.Productos", "Producto")
-                        .WithMany()
-                        .HasForeignKey("ProductoId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Producto");
+                    b.HasOne("Anderson_Nunez_AP1_P2.Models.Productos", null)
+                        .WithMany("EntradasProducidas")
+                        .HasForeignKey("ProductosProductoId");
                 });
 
             modelBuilder.Entity("Anderson_Nunez_AP1_P2.Models.EntradasDetalle", b =>
@@ -177,9 +124,9 @@ namespace Anderson_Nunez_AP1_P2.Migrations
                         .IsRequired();
 
                     b.HasOne("Anderson_Nunez_AP1_P2.Models.Productos", "Producto")
-                        .WithMany()
+                        .WithMany("EntradasDetalles")
                         .HasForeignKey("ProductoId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Entrada");
@@ -190,6 +137,13 @@ namespace Anderson_Nunez_AP1_P2.Migrations
             modelBuilder.Entity("Anderson_Nunez_AP1_P2.Models.Entradas", b =>
                 {
                     b.Navigation("Detalles");
+                });
+
+            modelBuilder.Entity("Anderson_Nunez_AP1_P2.Models.Productos", b =>
+                {
+                    b.Navigation("EntradasDetalles");
+
+                    b.Navigation("EntradasProducidas");
                 });
 #pragma warning restore 612, 618
         }
