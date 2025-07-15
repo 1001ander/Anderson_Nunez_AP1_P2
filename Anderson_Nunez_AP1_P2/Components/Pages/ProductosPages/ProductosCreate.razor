@@ -1,0 +1,105 @@
+﻿@page "/Productos/Create"
+@using Anderson_Nunez_AP1_P2.Models
+@using Anderson_Nunez_AP1_P2.Services
+@inject ProductosService productoService
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>Crear Producto</PageTitle>
+
+<EditForm Model="Producto" OnValidSubmit="Guardar">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="container mt-3">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white text-center">
+                <h5>Crear Producto</h5>
+            </div>
+
+            <div class="card-body">
+                @*Id Producto*@
+                <div class="mb-3">
+                    <label class="form-label"><strong>Producto ID</strong></label>
+                    <InputNumber id="ProductoId" class="form-control" @bind-Value="Producto.ProductoId" readonly></InputNumber>
+                </div>
+
+                @*Descripción*@
+                <div class="mb-3">
+                    <label class="form-label"><strong>Descripción</strong></label>
+                    <InputText @bind-Value="Producto.Descripcion" class="form-control" />
+                    <ValidationMessage For="@(() => Producto.Descripcion)" />
+                </div>
+
+                @*Peso*@
+                <div class="mb-3">
+                    <label class="form-label"><strong>Peso (kg)</strong></label>
+                    <InputNumber @bind-Value="Producto.Peso" class="form-control" step="0.01" />
+                    <ValidationMessage For="@(() => Producto.Peso)" />
+                </div>
+
+                @*Existencia*@
+                <div class="mb-3">
+                    <label class="form-label"><strong>Existencia</strong></label>
+                    <InputNumber @bind-Value="Producto.Existencia" class="form-control" />
+                    <ValidationMessage For="@(() => Producto.Existencia)" />
+                </div>
+
+                @*EsCompuesto*@
+                <div class="mb-3 form-check">
+                    <InputCheckbox @bind-Value="Producto.EsCompuesto" class="form-check-input" />
+                    <label class="form-check-label"><strong>¿Es producto compuesto?</strong></label>
+                    <ValidationMessage For="@(() => Producto.EsCompuesto)" />
+                </div>
+            </div>
+
+            <div class="card-footer text-center">
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-secondary me-2" @onclick="Volver">
+                        <i class="bi bi-arrow-left"></i> Volver
+                    </button>
+                    <button type="submit" class="btn btn-outline-success me-2">
+                        <i class="bi bi-check-circle"></i> Guardar
+                    </button>
+                    <button type="button" class="btn btn-outline-primary" @onclick="Nuevo">
+                        <i class="bi bi-eraser"></i> Limpiar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</EditForm>
+
+@code {
+    public Productos Producto { get; set; } = new Productos();
+
+    private async Task Nuevo()
+    {
+        Producto = new Productos();
+    }
+
+    private async Task<bool> Validar()
+    {
+        var existente = await productoService.Buscar(Producto.ProductoId);
+        return existente != null;
+    }
+
+    private async Task Guardar()
+    {
+        if (await Validar())
+        {
+            return;
+        }
+
+        var creado = await productoService.Guardar(Producto);
+        if (creado)
+        {
+            Volver();
+        }
+    }
+
+    private void Volver()
+    {
+        Navigation.NavigateTo("/Productos/Index");
+    }
+}
