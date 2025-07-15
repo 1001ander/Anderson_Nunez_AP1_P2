@@ -1,6 +1,7 @@
 using Anderson_Nunez_AP1_P2.Components;
 using Anderson_Nunez_AP1_P2.DAL;
 using Anderson_Nunez_AP1_P2.Services;
+using Blazored.Toast;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -13,6 +14,8 @@ builder.Services.AddDbContextFactory<Contexto>(o => o.UseSqlServer(ConString));
 //Inyeccion del service
 builder.Services.AddScoped<EntradasService>();
 builder.Services.AddScoped<ProductosService>();
+
+builder.Services.AddBlazoredToast();
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
