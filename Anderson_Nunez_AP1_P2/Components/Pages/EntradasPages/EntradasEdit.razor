@@ -1,0 +1,229 @@
+﻿@page "/Entradas/Edit/{EntradaId:int}"
+@using Anderson_Nunez_AP1_P2.Models
+@using Anderson_Nunez_AP1_P2.Services
+@inject EntradasService EntradasService
+@inject ProductosService ProductosService
+@inject NavigationManager NavigationManager
+@inject IToastService ToastService
+
+<PageTitle>Editar Entrada de Producción</PageTitle>
+
+<div class="container mt-4">
+    <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Editar Entrada de Producción</h5>
+        </div>
+
+        <div class="card-body">
+            <EditForm Model="@entrada" OnValidSubmit="@GuardarCambios">
+                <DataAnnotationsValidator />
+                <ValidationSummary class="text-danger" />
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Fecha</label>
+                        <InputDate class="form-control" @bind-Value="entrada.Fecha" />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Concepto</label>
+                        <InputText class="form-control" @bind-Value="entrada.Concepto" />
+                    </div>
+                </div>
+
+                <div class="card mb-3">
+                    <div class="card-header bg-secondary text-white">
+                        <h6 class="mb-0">Materiales Utilizados</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Producto</label>
+                                <InputSelect class="form-select" @bind-Value="nuevoDetalle.ProductoId">
+                                    <option value="0">Seleccionar material...</option>
+                                    @foreach (var producto in productosDisponibles.Where(p => !p.EsCompuesto))
+                                    {
+                                        <option value="@producto.ProductoId">@producto.Descripcion</option>
+                                    }
+                                </InputSelect>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Cantidad (kg)</label>
+                                <InputNumber class="form-control" @bind-Value="nuevoDetalle.Cantidad" />
+                            </div>
+                            <div class="col-md-3 d-flex align-items-end">
+                                <button type="button" class="btn btn-success" @onclick="AgregarDetalle">
+                                    <i class="fas fa-plus"></i> Agregar
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Material</th>
+                                        <th>Cantidad (kg)</th>
+                                        <th width="100px"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (entrada.Detalles != null && entrada.Detalles.Any())
+                                    {
+                                        @foreach (var detalle in entrada.Detalles)
+                                        {
+                                            var producto = productosDisponibles.FirstOrDefault(p => p.ProductoId == detalle.ProductoId);
+                                            <tr>
+                                                <td>@producto?.Descripcion</td>
+                                                <td>@detalle.Cantidad.ToString("N2")</td>
+                                                <td>
+                                                    <button type="button" class="btn btn-danger btn-sm"
+                                                            @onclick="@(() => EliminarDetalle(detalle))">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <tr>
+                                            <td colspan="3" class="text-center">No hay materiales agregados</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-3">
+                    <div class="card-header bg-secondary text-white">
+                        <h6 class="mb-0">Producto Resultante</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label class="form-label">Producto Final</label>
+                                <InputSelect class="form-select" @bind-Value="entrada.ProductoId">
+                                    <option value="0">Seleccionar producto final...</option>
+                                    @foreach (var producto in productosDisponibles.Where(p => p.EsCompuesto))
+                                    {
+                                        <option value="@producto.ProductoId">@producto.Descripcion</option>
+                                    }
+                                </InputSelect>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Cantidad Producida</label>
+                                <InputNumber class="form-control" @bind-Value="entrada.CantidadProducida" />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Peso Total (kg)</label>
+                                <InputNumber class="form-control" @bind-Value="entrada.PesoTotal" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mt-4">
+                    <div class="col-md-12 d-flex justify-content-end gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Guardar
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" @onclick="Cancelar">
+                            <i class="fas fa-times"></i> Cancelar
+                        </button>
+                    </div>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public int EntradaId { get; set; }
+
+    private Entradas entrada = new();
+    private EntradasDetalle nuevoDetalle = new();
+    private List<Productos> productosDisponibles = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            productosDisponibles = await ProductosService.Listar(p => true);
+            var buscada = await EntradasService.Buscar(EntradaId);
+
+            if (buscada is null)
+            {
+                ToastService.ShowError("Entrada no encontrada");
+                NavigationManager.NavigateTo("/Entradas/Index");
+                return;
+            }
+
+            entrada = buscada;
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Error al cargar datos: {ex.Message}");
+        }
+    }
+
+    private void AgregarDetalle()
+    {
+        if (nuevoDetalle.ProductoId == 0 || nuevoDetalle.Cantidad <= 0)
+        {
+            ToastService.ShowWarning("Seleccione un producto y especifique una cantidad válida");
+            return;
+        }
+
+        entrada.Detalles ??= new List<EntradasDetalle>();
+
+        entrada.Detalles.Add(new EntradasDetalle
+            {
+                ProductoId = nuevoDetalle.ProductoId,
+                Cantidad = nuevoDetalle.Cantidad
+            });
+
+        nuevoDetalle = new();
+    }
+
+    private void EliminarDetalle(EntradasDetalle detalle)
+    {
+        entrada.Detalles?.Remove(detalle);
+        ToastService.ShowInfo("Material eliminado");
+    }
+
+    private async Task GuardarCambios()
+    {
+        try
+        {
+            if (entrada.Detalles == null || !entrada.Detalles.Any())
+            {
+                ToastService.ShowWarning("Debe agregar al menos un material utilizado");
+                return;
+            }
+
+            var resultado = await EntradasService.Guardar(entrada);
+
+            if (resultado)
+            {
+                ToastService.ShowSuccess("Entrada actualizada correctamente");
+                NavigationManager.NavigateTo("/Entradas/Index");
+            }
+            else
+            {
+                ToastService.ShowError("No se pudo actualizar la entrada");
+            }
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Error al guardar: {ex.Message}");
+        }
+    }
+
+    private void Cancelar()
+    {
+        NavigationManager.NavigateTo("/Entradas/Index");
+    }
+}
