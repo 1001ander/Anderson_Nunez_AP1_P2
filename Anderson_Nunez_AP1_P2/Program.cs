@@ -1,5 +1,6 @@
 using Anderson_Nunez_AP1_P2.Components;
 using Anderson_Nunez_AP1_P2.DAL;
+using Anderson_Nunez_AP1_P2.Services;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -9,6 +10,9 @@ var builder = WebApplication.CreateBuilder(args);
 var ConString = builder.Configuration.GetConnectionString("ConStr");
 builder.Services.AddDbContextFactory<Contexto>(o => o.UseSqlServer(ConString));
 
+//Inyeccion del service
+builder.Services.AddScoped<EntradasService>();
+builder.Services.AddScoped<ProductosService>();
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
